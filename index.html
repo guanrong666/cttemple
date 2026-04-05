@@ -529,7 +529,7 @@
         // --- 2. 頁面切換、權限與登出邏輯 ---
 
         const pages = ['page-login', 'page-main'];
-        const tabs = ['tab-update', 'tab-query', 'tab-add', 'tab-list'];
+        const tabs = ['tab-update', 'tab-query', 'tab-add', 'tab-list','tab-admin-settings'];
         let currentPage = 'page-login';
         let currentTab = 'tab-update';
 
@@ -576,7 +576,7 @@
             const isViewer = currentUserRole === 'viewer';
             
             // 定義管理員專屬的頁面 (Viewer 僅能使用 'tab-query')
-            const adminOnlyTabs = ['tab-update', 'tab-add', 'tab-list','tab-admin-setting']; 
+            const adminOnlyTabs = ['tab-update', 'tab-add', 'tab-list','tab-admin-settings']; 
             
             // 隱藏/禁用 查詢專員不可用的 Tab 按鈕
             document.querySelectorAll('.tab-btn').forEach(btn => {
