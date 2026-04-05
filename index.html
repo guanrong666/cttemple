@@ -576,7 +576,7 @@
             const isViewer = currentUserRole === 'viewer';
             
             // 定義管理員專屬的頁面 (Viewer 僅能使用 'tab-query')
-            const adminOnlyTabs = ['tab-update', 'tab-add', 'tab-list']; 
+            const adminOnlyTabs = ['tab-update', 'tab-add', 'tab-list','tab-admin-setting']; 
             
             // 隱藏/禁用 查詢專員不可用的 Tab 按鈕
             document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -623,6 +623,9 @@
                     } else {
                         document.getElementById('query-update-form').classList.remove('hidden');
                     }
+                }
+                if (tabId === 'tab-admin-settings'){
+                    fetchStaffList();
                 }
             }
             
