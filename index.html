@@ -120,7 +120,10 @@
                     <button class="tab-btn p-3 text-sm rounded-lg hover:bg-gray-700 border-b-2 border-transparent flex-shrink-0" data-page="tab-query">🔍會員查詢</button>
                     <button class="tab-btn p-3 text-sm rounded-lg hover:bg-gray-700 border-b-2 border-transparent flex-shrink-0" data-page="tab-add">➕新增會員</button>
                     <button class="tab-btn p-3 text-sm rounded-lg hover:bg-gray-700 border-b-2 border-transparent flex-shrink-0" data-page="tab-list">📖會員資料</button>
+                    <button class="tab-btn p-3 text-sm rounded-lg hover:bg-gray-700 flex-shrink-0" data-page="tab-admin-settings">⚙️帳號管理</button>
                 </nav>
+
+                
 
                 <div id="tab-update" class="tab-content">
                     <div class="card-gold p-5 space-y-5">
@@ -141,8 +144,9 @@
                                 
                                 <label class="block text-sm">選擇奉還年份:</label>
                                 <select id="update-year-select" onchange="loadReturnData(this.value)" class="w-full select-gold">
-                                    <option value="114" selected>114 年 (2025)</option>
-                                    <option value="115">115 年 (2026)</option>
+                                    <option value="116">116 年 (2027)</option>
+                                    <option value="115" selected>115 年 (2026)</option>
+                                    <option value="114">114 年 (2025)</option>
                                     <option value="113">113 年 (2024)</option>
                                     <option value="112">112 年 (2023)</option>
                                 </select>
@@ -168,6 +172,8 @@
                                 <button onclick="updateMemberReturnInfo()" class="w-full py-3 mt-4 btn-gold">
                                     確定更新奉還資料
                                 </button>
+
+                                
                             </div>
                         </div>
                     </div>
@@ -236,6 +242,14 @@
                             
                             <div class="border border-gray-700 p-3 rounded-lg bg-gray-800 space-y-3">
                                 <h4 class="text-base font-semibold text-yellow-500">⚜️ 歷年借錢狀態</h4>
+
+                                <div>
+                                    <label for="add-borrow-116" class="block text-sm mb-1">116 年 (2027) 狀態:</label>
+                                    <select id="add-borrow-116" class="w-full select-gold" onchange="resetAddFormStatus()">
+                                        <option value="" selected>- 無資料 -</option>
+                                        <option value="true">✅ 有借錢</option>
+                                    </select>
+                                </div>
                                 
                                 <div>
                                     <label for="add-borrow-115" class="block text-sm mb-1">115 年 (2026) 狀態:</label>
@@ -288,15 +302,6 @@
                                 ⬇️ 匯出 Excel (CSV)
                             </button>
 
-                            <div class="bg-gray-800 p-3 rounded-lg space-y-2">
-                                <label class="block text-sm text-yellow-300">⬆️ 匯入 CSV 檔案 (覆蓋 Firebase 雲端資料):</label>
-                                <input type="file" id="csv-file-input" accept=".csv" class="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-yellow-50 file:text-yellow-700 hover:file:bg-yellow-100">
-                                <button onclick="importFromCsv()" class="w-full py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition duration-150">
-                                    執行匯入 (覆蓋🚨)
-                                </button>
-                                <p class="text-xs text-red-400">* 匯入將會完全**取代** Firebase 上現有所有會員資料！</p>
-                            </div>
-
                         </div>
                         
 
@@ -321,6 +326,9 @@
                                         <th>115借</th>
                                         <th>115還($)</th>
                                         <th>115還(日)</th>
+                                        <th>116借</th>
+                                        <th>116還($)</th>
+                                        <th>116還(日)</th>
                                         <th>操作</th> 
                                     </tr>
                                 </thead>
@@ -334,7 +342,6 @@
 
                         <p class="text-xs text-gray-400 pt-2">* 點擊「刪除」按鈕將永久移除會員資料。</p>
                     </div>
-
                     <div class="overflow-x-auto ...">
                         <table class="...">
                             </table>
@@ -344,6 +351,52 @@
 
         
                 </div>
+
+
+                    <div id="tab-admin-settings" class="tab-content hidden">
+                        <div class="card-gold p-5 space-y-6">
+                            <h2 class="text-xl font-bold text-yellow-400 border-b border-gray-700 pb-2">⚙️ 系統帳號管理</h2>
+                            
+                            <div class="space-y-4 p-4 bg-gray-800 rounded-lg">
+                                <h3 class="text-yellow-500 font-bold">➕ 新增/修改員工帳號</h3>
+                                <input type="text" id="new-admin-user" placeholder="員工編號 (帳號)" class="w-full input-gold">
+                                <input type="password" id="new-admin-pass" placeholder="設定密碼" class="w-full input-gold">
+                                <select id="new-admin-role" class="w-full select-gold">
+                                    <option value="admin">系統管理員 (全權限)</option>
+                                    <option value="viewer">查詢專員 (僅查詢)</option>
+                                </select>
+                                <button onclick="createStaffAccount()" class="w-full py-2 btn-gold text-sm">儲存帳號設定</button>
+                            </div>
+                            <div class="space-y-4 mt-6">
+                                <h3 class="text-yellow-500 font-bold border-b border-gray-700 pb-2">📋 目前帳號列表</h3>
+                                <div class="overflow-x-auto rounded-lg border border-gray-700">
+                                    <table class="w-full table-gold text-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>員工帳號</th>
+                                                <th>角色</th>
+                                                <th>密碼</th>
+                                                <th>操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="staff-list-body">
+                                            </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                    
+                            <div class="space-y-4 p-4 bg-red-900/20 border border-red-900/50 rounded-lg">
+                                <h3 class="text-red-400 font-bold">🛡️ 安全安全性選項</h3>
+                                <p class="text-xs text-gray-400">點擊下方按鈕後，系統將強制更新安全金鑰，所有目前登入的裝置在下次重新整理時會被要求重新登入。</p>
+                                <button onclick="logoutAllDevices()" class="w-full py-2 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition">
+                                    🚫 強制登出所有裝置
+                                </button>
+                            </div>
+                        </div>
+                        
+                    </div>
+
+                    
             </section>
         </div>
     </div>
@@ -352,12 +405,16 @@
         // 全局變量
         let currentMember = null;
         let memberData = []; 
-        const AVAILABLE_YEARS = ['112', '113', '114', '115'];
+        const AVAILABLE_YEARS = ['112', '113', '114', '115','116'];
         // 🚨 權限管理變數：'guest', 'viewer', 'admin'
         let currentUserRole = 'guest'; 
 
         let currentPageNumber = 1;
         const rowsPerPage = 50;
+
+        let staffCollection;
+
+
 
         // ----------------------------------------------------------------------
         // ⚠️ 請替換成您在步驟一中取得的實際 Firebase 配置 ⚠️
@@ -380,6 +437,7 @@
             app = firebase.initializeApp(firebaseConfig);
             db = app.firestore();
             membersCollection = db.collection('members');
+            staffCollection = db.collection('staff');
         } catch (e) {
             console.error("Firebase 初始化失敗，請檢查配置金鑰是否正確：", e);
             alert("🚫 Firebase 系統初始化失敗，請檢查程式碼中的金鑰！");
@@ -435,11 +493,11 @@
         }
 
         /** 根據輸入查詢會員 (使用快取資料) */
-        function findMember(query) {
+        function findMembers(query) {
             const normalizedQuery = String(query).trim();
-            if (!normalizedQuery) return null;
+            if (!normalizedQuery) return [];
 
-            return memberData.find(m => 
+            return memberData.filter(m => 
                 String(m.id) === normalizedQuery ||
                 m.name === normalizedQuery ||
                 m.idCard === normalizedQuery.toUpperCase() ||
@@ -554,7 +612,7 @@
                     updateAddFormToNextId(); 
                 }
                 if (tabId === 'tab-update') {
-                    document.getElementById('update-year-select').value = '114';
+                    document.getElementById('update-year-select').value = '115';
                     document.getElementById('member-return-update-form').classList.add('hidden');
                 }
                 if (tabId === 'tab-query') {
@@ -638,47 +696,157 @@
         // --- 3. 還錢更新頁面邏輯 (非同步) ---
 
         /** 查詢並載入資料到奉還表單 (確保使用最新的資料) */
-        async function fetchMemberDataForUpdate() {
-            await fetchAllMembers(); // 確保資料為最新
-            const query = document.getElementById('update-query-input').value;
-            currentMember = findMember(query);
+        /** 查詢並載入資料到奉還表單 (支援多筆選擇與 115 年預設) */
+async function fetchMemberDataForUpdate(targetId = null) {
+    await fetchAllMembers();
+    const updateForm = document.getElementById('member-return-update-form');
+    
+    // 如果有傳入 targetId，代表是從選單點進來的
+    if (targetId) {
+        currentMember = memberData.find(m => m.id === targetId);
+    } else {
+        const query = document.getElementById('update-query-input').value;
+        const results = findMembers(query); // 使用我們之前改好的 findMembers
 
-            const updateForm = document.getElementById('member-return-update-form');
-            if (!currentMember) {
-                updateForm.classList.add('hidden');
-                alert('🚫 查無此會員資料。');
-                return;
-            }
+        if (results.length === 0) {
+            updateForm.classList.add('hidden');
+            alert('🚫 查無此會員資料。');
+            return;
+        }
 
+        // 如果有多筆結果，在畫面上顯示選擇按鈕
+        if (results.length > 1) {
+            let btnHtml = `<div class="p-4 bg-gray-800 rounded-lg border border-yellow-600/50">
+                            <p class="text-yellow-400 mb-3 font-bold">找到 ${results.length} 筆重複資料，請選擇：</p>`;
+            results.forEach(m => {
+                btnHtml += `
+                    <button onclick="fetchMemberDataForUpdate(${m.id})" class="w-full mb-2 p-3 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm text-left border border-gray-600">
+                        <span class="text-yellow-500 font-bold">ID: ${m.id}</span> | 姓名: ${m.name} | 電話: ${m.phone}
+                    </button>`;
+            });
+            btnHtml += `</div>`;
+            updateForm.innerHTML = btnHtml; 
             updateForm.classList.remove('hidden');
-            document.getElementById('update-member-name-return').textContent = `會員：${currentMember.name} (編號：${currentMember.id})`;
-            
-            // 預設載入 114 年資料
-            document.getElementById('update-year-select').value = '114';
-            loadReturnData('114');
+            return;
         }
+        currentMember = results[0];
+    }
 
-        function loadReturnData(year) {
-            // 確保 currentMember 存在且 years 屬性存在
-            const data = currentMember?.years?.[year] || { borrowed: false, isReturned: false, returnedAmount: 0, returnedDate: '' };
-            
-            // 檢查該年是否有紀錄 (無資料代表 years[year] 不存在)
-            const hasRecord = !!currentMember?.years?.[year];
-            
-            document.getElementById('return-borrowed-status').textContent = hasRecord ? 
-                `📌 ${year} 年有借錢紀錄` : `🚫 ${year} 年無資料 (新增還款將自動建立紀錄)`;
-            document.getElementById('return-borrowed-status').className = hasRecord ? 
-                'text-sm font-bold text-yellow-400' : 'text-sm font-bold text-red-400';
+    // --- 執行到這裡代表已經確定了唯一的 currentMember ---
+    // 1. 先還原介面 HTML 結構 (避免被上面的選擇按鈕蓋掉)
+    updateForm.innerHTML = `
+        <h3 id="update-member-name-return" class="text-lg font-bold text-yellow-300"></h3>
+        <div class="space-y-3 p-4 bg-gray-800 rounded-lg">
+            <h4 class="font-bold text-yellow-500">🗓️ 選擇奉還年份及資訊</h4>
+            <label class="block text-sm">選擇奉還年份:</label>
+            <select id="update-year-select" onchange="loadReturnData(this.value)" class="w-full select-gold">
+                <option value="116">116 年 (2027)</option>
+                <option value="115" selected>115 年 (2026)</option>
+                <option value="114">114 年 (2025)</option>
+                <option value="113">113 年 (2024)</option>
+                <option value="112">112 年 (2023)</option>
+            </select>
+            <div id="return-input-area" class="space-y-2 border-t border-gray-700 pt-3 mt-3">
+                <p id="return-borrowed-status" class="text-sm font-bold text-red-400"></p>
+                <label class="block text-sm">奉還金額:</label>
+                <input type="number" id="update-amount" class="w-full input-gold text-right">
+                <label class="block text-sm">奉還日期:</label>
+                <input type="date" id="update-date" class="w-full input-gold">
+                <div class="flex items-center justify-between mt-2 pt-2 border-t border-gray-700">
+                    <span class="text-sm">奉還狀態：</span>
+                    <label class="inline-flex items-center">
+                        <input type="checkbox" id="update-returned-status" class="form-checkbox h-5 w-5 text-yellow-500 border-gray-600 rounded bg-gray-700 focus:ring-yellow-500">
+                        <span id="update-returned-label" class="ml-2 text-red-400">尚未奉還</span>
+                    </label>
+                </div>
+            </div>
+            <button onclick="updateMemberReturnInfo()" class="w-full py-3 mt-4 btn-gold">確定更新奉還資料</button>
+        </div>`;
 
-            document.getElementById('update-amount').value = data.returnedAmount || '';
-            document.getElementById('update-date').value = data.returnedDate || '';
-            
-            // 使用 isReturned 屬性來判斷狀態
-            const isReturned = data.isReturned === true;
-            document.getElementById('update-returned-status').checked = isReturned;
-            document.getElementById('update-returned-label').textContent = isReturned ? '已奉還' : '尚未奉還';
-            document.getElementById('update-returned-label').className = `ml-2 ${isReturned ? 'text-green-400' : 'text-red-400'}`;
-        }
+    // 2. 重新綁定 Checkbox 事件 (因為 HTML 是重新產生的)
+    document.getElementById('update-returned-status').addEventListener('change', (e) => {
+        const isReturned = e.target.checked;
+        const label = document.getElementById('update-returned-label');
+        label.textContent = isReturned ? '已奉還' : '尚未奉還';
+        label.className = `ml-2 ${isReturned ? 'text-green-400' : 'text-red-400'}`;
+    });
+
+    // 3. 顯示資料
+    updateForm.classList.remove('hidden');
+    document.getElementById('update-member-name-return').textContent = `會員：${currentMember.name} (編號：${currentMember.id})`;
+    
+    // 預設載入 115 年資料
+    document.getElementById('update-year-select').value = '115';
+    loadReturnData('115');
+}
+
+        /** 更新畫面上顯示的奉還內容 (加入禁用法則) */
+function loadReturnData(year) {
+    if (!currentMember) return;
+    const select = document.getElementById('update-year-select');
+    
+    // 刷新選單內「每一項」的文字狀態
+    if (select) {
+        Array.from(select.options).forEach(opt => {
+            const y = opt.value;
+            const yData = currentMember.years?.[y];
+            const status = yData?.isReturned ? "(已奉還)" : (yData ? "(尚未奉還)" : "(未借錢)");
+            opt.textContent = `${y} 年 ${status}`;
+        });
+    }
+
+    const data = currentMember.years?.[year] || { borrowed: false, isReturned: false, returnedAmount: 0, returnedDate: '' };
+    const hasRecord = !!currentMember.years?.[year]; // 檢查是否有借錢紀錄
+    
+    // 更新狀態文字
+    const statusP = document.getElementById('return-borrowed-status');
+    statusP.textContent = hasRecord ? `📌 ${year} 年有借錢紀錄` : `🚫 ${year} 年無借錢紀錄 (不可操作)`;
+    statusP.className = `text-sm font-bold ${hasRecord ? 'text-yellow-400' : 'text-red-400'}`;
+
+    // --- 核心修改：如果沒借錢，就禁用輸入框與按鈕 ---
+    const inputAmount = document.getElementById('update-amount');
+    const inputDate = document.getElementById('update-date');
+    const checkStatus = document.getElementById('update-returned-status');
+    const updateBtn = document.querySelector('#tab-update .btn-gold:last-child'); // 抓取更新按鈕
+
+    if (!hasRecord) {
+        // 沒借錢：清空內容並禁用
+        inputAmount.value = '';
+        inputDate.value = '';
+        checkStatus.checked = false;
+        
+        inputAmount.disabled = true;
+        inputDate.disabled = true;
+        checkStatus.disabled = true;
+        if(updateBtn) updateBtn.disabled = true;
+        
+        // 變更樣式讓使用者知道不能按
+        inputAmount.classList.add('opacity-50', 'cursor-not-allowed');
+        inputDate.classList.add('opacity-50', 'cursor-not-allowed');
+        if(updateBtn) updateBtn.classList.add('opacity-50', 'cursor-not-allowed');
+    } else {
+        // 有借錢：填入資料並啟用
+        inputAmount.value = data.returnedAmount || '';
+        inputDate.value = data.returnedDate || '';
+        checkStatus.checked = !!data.isReturned;
+        
+        inputAmount.disabled = false;
+        inputDate.disabled = false;
+        checkStatus.disabled = false;
+        if(updateBtn) updateBtn.disabled = false;
+
+        // 移除禁用樣式
+        inputAmount.classList.remove('opacity-50', 'cursor-not-allowed');
+        inputDate.classList.remove('opacity-50', 'cursor-not-allowed');
+        if(updateBtn) updateBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+    }
+
+    // 更新勾選框標籤文字
+    const label = document.getElementById('update-returned-label');
+    const isReturned = (data.isReturned === true);
+    label.textContent = isReturned ? '已奉還' : '尚未奉還';
+    label.className = `ml-2 ${isReturned ? 'text-green-400' : 'text-red-400'}`;
+}
 
         async function updateMemberReturnInfo() {
             if (currentUserRole !== 'admin') {
@@ -690,6 +858,7 @@
                 alert('請先載入會員資料！');
                 return;
             }
+            
 
             const year = document.getElementById('update-year-select').value;
             const amount = parseInt(document.getElementById('update-amount').value) || 0;
@@ -701,6 +870,11 @@
 
             // 獲取該年現有的資料，如果沒有則為空物件
             const existingData = currentMember.years[year] || {};
+
+            if (!currentMember.years?.[year]) {
+        alert(`🚫 此會員在 ${year} 年並沒有借錢紀錄，無法更新奉還資料。`);
+        return;
+    }
             
             // *** 🎯 還錢更新邏輯 ***
             if (isReturned) {
@@ -752,71 +926,76 @@
         // --- 4. 會員查詢頁面邏輯 (非同步) ---
 
         /** 查詢並顯示詳細資料 (確保使用最新的資料) */
-        async function fetchMemberDataForQuery() {
-            await fetchAllMembers(); // 確保資料為最新
+        /** 查詢並顯示詳細資料 (支援電話重複) */
+        async function fetchMemberDataForQuery(targetId = null) {
+        await fetchAllMembers();
+        const queryResultDiv = document.getElementById('member-data-query');
+        const overviewDiv = document.getElementById('query-result-overview');
+    
+        // 如果有傳入 targetId，代表是從選單點進來的
+        if (targetId) {
+            currentMember = memberData.find(m => m.id === targetId);
+        } else {
             const query = document.getElementById('query-input').value;
-            currentMember = findMember(query); 
-            
-            const queryResultDiv = document.getElementById('member-data-query');
-            const overviewDiv = document.getElementById('query-result-overview');
+            const results = findMembers(query);
 
-            if (!currentMember) {
+            if (results.length === 0) {
                 queryResultDiv.classList.add('hidden');
                 alert('🚫 查無此會員資料。');
                 return;
             }
-            
-            // 只有 Admin 才載入編輯欄位
+
+        // 如果有多筆，顯示選擇清單並結束函式
+        if (results.length > 1) {
+            let listHtml = `<h3 class="text-lg font-bold text-yellow-300 mb-3">找到 ${results.length} 筆重複資料，請選擇：</h3>`;
+            results.forEach(m => {
+                listHtml += `
+                    <button onclick="fetchMemberDataForQuery(${m.id})" class="w-full text-left p-3 mb-2 bg-gray-700 hover:bg-gray-600 rounded-lg border border-yellow-600/30">
+                        <span class="text-yellow-400 font-bold">編號: ${m.id}</span> | 姓名: ${m.name} | 電話: ${m.phone}
+                    </button>`;
+            });
+            overviewDiv.innerHTML = listHtml;
+            queryResultDiv.classList.remove('hidden');
+            document.getElementById('query-update-form').classList.add('hidden');
+            return;
+        }
+        currentMember = results[0];
+        }
+
+            // --- 以下為原本顯示單筆資料的邏輯 ---
             if (currentUserRole === 'admin') {
+                document.getElementById('query-update-form').classList.remove('hidden');
                 document.getElementById('query-update-name').value = currentMember.name;
                 document.getElementById('query-update-idCard').value = currentMember.idCard;
                 document.getElementById('query-update-phone').value = currentMember.phone;
                 document.getElementById('query-update-address').value = currentMember.address;
             }
 
-
             let html = `<h3 class="text-lg font-bold text-yellow-300 mb-3">查詢結果：${currentMember.name} (編號: ${currentMember.id})</h3>
-                         <div class="text-sm space-y-1 pb-4 border-b border-gray-600">
+                        <div class="text-sm space-y-1 pb-4 border-b border-gray-600">
                             <p><strong>身分證:</strong> ${currentMember.idCard}</p>
                             <p><strong>電話:</strong> ${currentMember.phone}</p>
                             <p><strong>地址:</strong> ${currentMember.address}</p>
-                         </div>
-                         <div class="mt-4 border-t border-gray-700 pt-3 space-y-3">
+                        </div>
+                        <div class="mt-4 border-t border-gray-700 pt-3 space-y-3">
                             <h4 class="text-base font-semibold text-yellow-500">歷年借貸/奉還紀錄</h4>`;
             
             AVAILABLE_YEARS.forEach(year => {
-                // 檢查 years[year] 是否存在，如果不存在則使用空物件 {}
                 const yearData = currentMember.years?.[year] || {}; 
-                const hasRecord = !!currentMember.years?.[year]; // 檢查是否有紀錄 (即不是「無資料」)
+                const hasRecord = !!currentMember.years?.[year];
                 const isReturned = yearData.isReturned === true;
                 const statusClass = isReturned ? 'text-green-400' : 'text-red-400';
                 
-                let recordText;
-                if (!hasRecord) {
-                    recordText = `🚫 ${year} 年 無資料 (借款狀態: 空)`;
-                } else if (isReturned) {
-                    recordText = `✅ ${year} 年 已奉還 (借款狀態: 是)`;
-                } else {
-                    recordText = `⚠️ ${year} 年 尚未奉還 (借款狀態: 否)`;
-                }
-
+                let recordText = !hasRecord ? `🚫 ${year} 年 無資料` : 
+                                (isReturned ? `✅ ${year} 年 已奉還` : `⚠️ ${year} 年 尚未奉還`);
 
                 html += `<div class="p-3 bg-gray-700 rounded-lg ${hasRecord ? '' : 'opacity-70'}">
-                            <p class="font-bold text-yellow-300">
-                                ${year} 年 (${parseInt(year)+1911}) 
-                            </p>
-                            <p class="text-base mt-1 mb-1">
-                                奉還金額: 
-                                <span class="text-lg font-extrabold text-yellow-400">${yearData.returnedAmount || 'N/A'}</span>
-                                <br>
-                                日期: 
-                                <span class="text-base font-bold text-gray-200">${yearData.returnedDate || 'N/A'}</span>
-                            </p>
+                            <p class="font-bold text-yellow-300">${year} 年 (${parseInt(year)+1911})</p>
+                            <p class="text-base mt-1 mb-1">奉還金額: <span class="text-lg font-extrabold text-yellow-400">${yearData.returnedAmount || '0'}</span></p>
                             <p class="text-sm ${statusClass}">${recordText}</p>
                         </div>`;
             });
 
-            html += `</div>`;
             overviewDiv.innerHTML = html;
             queryResultDiv.classList.remove('hidden');
         }
@@ -1189,147 +1368,150 @@ function changePage(offset) {
             alert('✅ 會員資料已成功匯出為 CSV 檔案！');
         }
 
-        /** 從 CSV 檔案匯入資料 (覆蓋) */
-        function importFromCsv() {
-            if (currentUserRole !== 'admin') {
-                 alert('🚫 您的權限不足，無法執行資料匯入。');
-                 return;
-            }
+        async function login() {
+        const user = document.getElementById('login-user').value.trim();
+        const pass = document.getElementById('login-pass').value.trim();
 
-            const fileInput = document.getElementById('csv-file-input');
-            const file = fileInput.files[0];
-
-            if (!file) {
-                alert('🚫 請先選擇一個 CSV 檔案。');
+            // 先做基本的 admin/123456 保底登入（防止資料庫空的進不去）
+            if (user === 'admin' && pass === '123456') {
+                currentUserRole = 'admin';
+                checkSessionKey(); // 檢查遠端登出狀態
+                showPage('page-main');
                 return;
             }
 
-            if (!confirm('🚨 警告：匯入 CSV 將會完全覆蓋 Firebase 上現有的所有會員資料。您確定要繼續嗎？')) {
-                return;
+            try {
+                const doc = await staffCollection.doc(user).get();
+                if (doc.exists && doc.data().password === pass) {
+                    currentUserRole = doc.data().role;
+                    checkSessionKey(); 
+                    alert(`✅ 登入成功！權限：${currentUserRole}`);
+                    showPage('page-main');
+                } else {
+                    alert('🚫 帳號或密碼錯誤！');
+                }
+            } catch (e) {
+                alert('系統連線失敗');
             }
-
-            const reader = new FileReader();
-            reader.onload = async function(e) {
-                const text = e.target.result;
-                const lines = text.split('\n').filter(line => line.trim() !== '');
-
-                if (lines.length < 2) {
-                    alert('🚫 CSV 檔案內容無效 (可能只有標頭)。');
-                    return;
-                }
-
-                // 移除 BOM 並解析標頭
-                const headers = lines[0].replace(/\uFEFF/g, '').split(',').map(h => h.trim().replace(/"/g, ''));
-                const newMembers = [];
-                let maxId = 0;
-
-                for (let i = 1; i < lines.length; i++) {
-                    // 使用正規表達式處理帶有引號的 CSV
-                    const values = [];
-                    let match;
-                    const regex = /("([^"]*)"|[^,]*),?/g;
-                    
-                    let line = lines[i] + ','; // 確保最後一個欄位也被匹配
-
-                    while (match = regex.exec(line)) {
-                        values.push(match[2] !== undefined ? match[2] : match[0].slice(0, -1));
-                    }
-
-                    if (values.length < headers.length) continue; // 跳過不完整的行
-
-                    const member = { years: {} };
-                    let yearIndex = 0;
-                    let currentYear = AVAILABLE_YEARS[yearIndex];
-                    
-                    for (let j = 0; j < headers.length; j++) {
-                        const header = headers[j];
-                        const value = values[j];
-                        
-                        if (header === "編號") {
-                            member.id = parseInt(value) || 0;
-                            maxId = Math.max(maxId, member.id);
-                        } else if (header === "姓名") {
-                            member.name = value;
-                        } else if (header === "身分證") {
-                            member.idCard = value;
-                        } else if (header === "電話") {
-                            member.phone = value;
-                        } else if (header === "地址") {
-                            member.address = value;
-                        } else if (header.endsWith('借')) {
-                            currentYear = header.slice(0, 3);
-                            // 只有當借錢欄位為「是」或非空時，才建立 years[year] 紀錄，並設定 borrowed: true
-                            if (value === '是' || value.toLowerCase() === 'true' || value.trim() !== '') {
-                                member.years[currentYear] = member.years[currentYear] || {};
-                                member.years[currentYear].borrowed = true;
-                                // 由於 CSV 無 isReturned 欄位，如果有還款，則假設已還
-                                if (member.years[currentYear].returnedAmount > 0 || member.years[currentYear].returnedDate) {
-                                     member.years[currentYear].isReturned = true;
-                                } else {
-                                     member.years[currentYear].isReturned = false;
-                                }
-                            }
-                        } else if (header.endsWith('還($)')) {
-                            const amount = parseInt(value) || 0;
-                            if (amount > 0 || member.years[currentYear]) {
-                                member.years[currentYear] = member.years[currentYear] || {borrowed: true}; // 補上 borrowed: true
-                                member.years[currentYear].returnedAmount = amount;
-                                if (amount > 0 || member.years[currentYear].returnedDate) {
-                                     member.years[currentYear].isReturned = true;
-                                }
-                            }
-                        } else if (header.endsWith('還(日)')) {
-                            const date = value.trim();
-                            if (date !== '' || member.years[currentYear]) {
-                                member.years[currentYear] = member.years[currentYear] || {borrowed: true}; // 補上 borrowed: true
-                                member.years[currentYear].returnedDate = date;
-                                if (date !== '' || member.years[currentYear].returnedAmount > 0) {
-                                     member.years[currentYear].isReturned = true;
-                                }
-                            }
-                        }
-                    }
-
-                    if (member.id && member.name) {
-                        newMembers.push(member);
-                    }
-                }
-
-                if (newMembers.length === 0) {
-                    alert('🚫 從 CSV 檔案中讀取不到有效的會員資料。');
-                    return;
-                }
-                
-                // 批次寫入 Firebase
-                const batch = db.batch();
-                
-                // 1. 清空舊資料
-                const oldSnapshot = await membersCollection.get();
-                oldSnapshot.docs.forEach(doc => batch.delete(doc.ref));
-
-                // 2. 寫入新資料
-                newMembers.forEach(member => {
-                    const docRef = membersCollection.doc(String(member.id));
-                    batch.set(docRef, member);
-                });
-
-                try {
-                    await batch.commit();
-                    
-                    // 更新快取和 UI
-                    await fetchAllMembers();
-                    renderMemberListTable();
-                    
-                    alert(`✅ 成功匯入 ${newMembers.length} 筆會員資料！舊資料已清除。`);
-                } catch (error) {
-                    console.error("批次寫入 Firebase 失敗:", error);
-                    alert('🚫 資料匯入過程中發生錯誤！');
-                }
-
-            };
-
-            reader.readAsText(file, 'UTF-8');
         }
+
+        async function createStaffAccount() {
+    if (currentUserRole !== 'admin') return alert('限管理員操作');
+    
+    const user = document.getElementById('new-admin-user').value.trim();
+    const pass = document.getElementById('new-admin-pass').value.trim();
+    const role = document.getElementById('new-admin-role').value;
+
+    if (!user || !pass) return alert('請填寫完整');
+
+    try {
+        await db.collection('staff').doc(user).set({
+            password: pass,
+            role: role,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        alert('✅ 帳號已成功設定');
+        
+        // 重置介面
+        document.getElementById('new-admin-user').value = '';
+        document.getElementById('new-admin-pass').value = '';
+        document.querySelector('[onclick="createStaffAccount()"]').textContent = '儲存帳號設定';
+        
+        fetchStaffList(); // 立即刷新下方列表
+    } catch (e) {
+        alert('儲存失敗');
+    }
+}
+
+        // 在資料庫中紀錄一個版本號
+        async function logoutAllDevices() {
+            if (!confirm('確定要強制登出所有人的裝置嗎？')) return;
+            
+            const newKey = Date.now().toString();
+            await db.collection('system_config').doc('session').set({ key: newKey });
+            localStorage.setItem('mySessionKey', newKey);
+            alert('✅ 已核發新金鑰，其他裝置將被要求重新登入。');
+        }
+
+        // 檢查是否被踢下線
+        async function checkSessionKey() {
+            db.collection('system_config').doc('session').onSnapshot((doc) => {
+                const remoteKey = doc.data()?.key;
+                const myKey = localStorage.getItem('mySessionKey');
+                
+                if (!myKey) {
+                    localStorage.setItem('mySessionKey', remoteKey);
+                } else if (remoteKey && myKey !== remoteKey) {
+                    alert('⚠️ 您的登入已過期或管理員已強制所有裝置登出。');
+                    location.reload(); // 重新整理會回到登入頁
+                }
+            });
+        }
+
+        /** 從 Firestore 讀取所有員工帳號並渲染表格 */
+        async function fetchStaffList() {
+            if (currentUserRole !== 'admin') return;
+
+            const body = document.getElementById('staff-list-body');
+            body.innerHTML = '<tr><td colspan="4" class="text-center">載入中...</td></tr>';
+
+            try {
+                const snapshot = await db.collection('staff').get();
+                body.innerHTML = ''; // 清空載入中文字
+
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const id = doc.id;
+                    const roleName = data.role === 'admin' ? '管理員' : '查詢員';
+                    
+                    let row = `
+                        <tr>
+                            <td class="font-bold text-yellow-300">${id}</td>
+                            <td>${roleName}</td>
+                            <td><span class="password-mask">******</span></td>
+                            <td class="space-x-2">
+                                <button onclick="editStaff('${id}', '${data.password}', '${data.role}')" class="text-blue-400 hover:text-blue-300">編輯</button>
+                                <button onclick="deleteStaff('${id}')" class="text-red-400 hover:text-red-300">刪除</button>
+                            </td>
+                        </tr>`;
+                    body.innerHTML += row;
+                });
+            } catch (e) {
+                console.error("讀取帳號失敗:", e);
+                body.innerHTML = '<tr><td colspan="4" class="text-red-400 text-center">讀取失敗</td></tr>';
+            }
+        }
+
+                function editStaff(user, pass, role) {
+            document.getElementById('new-admin-user').value = user;
+            document.getElementById('new-admin-pass').value = pass;
+            document.getElementById('new-admin-role').value = role;
+            
+            // 捲動到輸入框位置
+            document.getElementById('new-admin-user').focus();
+            // 更改按鈕文字提示正在編輯
+            const btn = document.querySelector('[onclick="createStaffAccount()"]');
+            btn.textContent = `更新帳號：${user}`;
+        }
+
+                async function deleteStaff(user) {
+            if (user === 'admin') {
+                alert('🚫 系統預設管理員「admin」不可刪除！');
+                return;
+            }
+
+            if (confirm(`🚨 確定要永久刪除帳號「${user}」嗎？`)) {
+                try {
+                    await db.collection('staff').doc(user).delete();
+                    alert('✅ 帳號已刪除');
+                    fetchStaffList(); // 重新整理列表
+                } catch (e) {
+                    alert('刪除失敗');
+                }
+            }
+        }
+        
         
     </script>
 </body>
