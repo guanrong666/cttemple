@@ -516,10 +516,11 @@
             if (!normalizedQuery) return [];
 
             return memberData.filter(m => 
-                String(m.id) === normalizedQuery ||
-                m.name === normalizedQuery ||
-                m.idCard === normalizedQuery.toUpperCase() ||
-                m.phone === normalizedQuery
+                // 使用 == (非嚴格比對) 或將兩者都轉為字串比對，防止型別錯誤
+                String(m.id) === normalizedQuery || 
+                (m.name && m.name.includes(normalizedQuery)) || // 支援模糊搜尋名字更方便
+                (m.idCard && m.idCard.toUpperCase() === normalizedQuery.toUpperCase()) ||
+                (m.phone && m.phone === normalizedQuery)
             );
         }
 
@@ -593,6 +594,14 @@
             // 1. 根據權限隱藏/顯示 Tab 按鈕
             const isViewer = currentUserRole === 'viewer';
             
+            currentMember = null; 
+    
+            // 清空各頁面的查詢結果 UI
+            const updateForm = document.getElementById('member-return-update-form');
+            const queryResult = document.getElementById('member-data-query');
+            if (updateForm) updateForm.classList.add('hidden');
+            if (queryResult) queryResult.classList.add('hidden');
+
             // 定義管理員專屬的頁面 (Viewer 僅能使用 'tab-query')
             const adminOnlyTabs = ['tab-update', 'tab-add', 'tab-list','tab-admin-settings','tab-finance']; 
             if (currentUserRole === 'viewer' && adminOnlyTabs.includes(tabId)) {
@@ -1120,6 +1129,21 @@ async function loadMemberForUpdate() {
     }
 
     const idInput = document.getElementById('add-id').value;
+    const id = parseInt(idInput); // 確保轉為數字
+
+    // 從快取陣列中找
+    const found = memberData.find(m => m.id === id);
+    
+    if (found) {
+        // 使用解構賦值拷貝一份資料，避免直接修改原始陣列導致搜尋失效
+        currentMember = JSON.parse(JSON.stringify(found)); 
+        
+        // 填入欄位... (如前次所述)
+        document.getElementById('add-id').setAttribute('data-mode', 'update');
+    } else {
+        alert("找不到此編號");
+    }
+
     if (!idInput) {
         alert('請先輸入要編輯的會員編號！');
         return;
@@ -1133,6 +1157,8 @@ async function loadMemberForUpdate() {
         updateAddFormToNextId(); // 找不到就切回「新增模式」
         return;
     }
+
+    
 
     // --- 成功找到資料後，開始填入表單 ---
     
