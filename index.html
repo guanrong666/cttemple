@@ -120,7 +120,8 @@
                     <button class="tab-btn p-3 text-sm rounded-lg hover:bg-gray-700 border-b-2 border-transparent flex-shrink-0" data-page="tab-query">🔍會員查詢</button>
                     <button class="tab-btn p-3 text-sm rounded-lg hover:bg-gray-700 border-b-2 border-transparent flex-shrink-0" data-page="tab-add">➕新增會員</button>
                     <button class="tab-btn p-3 text-sm rounded-lg hover:bg-gray-700 border-b-2 border-transparent flex-shrink-0" data-page="tab-list">📖會員資料</button>
-                    <button class="tab-btn p-3 text-sm rounded-lg hover:bg-gray-700 flex-shrink-0" data-page="tab-admin-settings">⚙️帳號管理</button>
+                    <button id="nav-admin-settings" class="tab-btn p-3 text-sm rounded-lg hover:bg-gray-700 flex-shrink-0" data-page="tab-admin-settings">⚙️帳號管理</button>
+                    <button class="tab-btn p-3 text-sm rounded-lg hover:bg-gray-700 flex-shrink-0" data-page="tab-finance">💰金錢管理</button>
                 </nav>
 
                 
@@ -393,7 +394,24 @@
                                 </button>
                             </div>
                         </div>
-                        
+
+                    </div>
+
+                    <div id="tab-finance" class="tab-content hidden">
+                        <div class="card-gold p-5 space-y-5">
+                            <h2 class="text-xl font-bold text-yellow-400 border-b border-gray-700 pb-2">📊 年度財務與人數統計</h2>
+                            
+                            <div class="flex justify-between items-center">
+                                <p class="text-xs text-gray-400">* 點擊下方按鈕以獲取最新雲端數據統計</p>
+                                <button onclick="calculateFinanceStats()" class="py-2 px-4 btn-gold text-sm">
+                                    🔄 更新統計數據
+                                </button>
+                            </div>
+                    
+                            <div id="finance-stats-container" class="space-y-4">
+                                <p class="text-center py-10 text-gray-500">請點擊上方按鈕開始統計...</p>
+                            </div>
+                        </div>
                     </div>
 
                     
@@ -576,7 +594,12 @@
             const isViewer = currentUserRole === 'viewer';
             
             // 定義管理員專屬的頁面 (Viewer 僅能使用 'tab-query')
-            const adminOnlyTabs = ['tab-update', 'tab-add', 'tab-list','tab-admin-settings']; 
+            const adminOnlyTabs = ['tab-update', 'tab-add', 'tab-list','tab-admin-settings','tab-finance']; 
+            if (currentUserRole === 'viewer' && adminOnlyTabs.includes(tabId)) {
+        alert('🚫 您的權限不足。');
+        showTab('tab-query'); // 強制跳轉到查詢頁面
+        return;
+    }
             
             // 隱藏/禁用 查詢專員不可用的 Tab 按鈕
             document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -668,7 +691,13 @@
                 document.getElementById('login-pass').value = '';
                 return;
             }
-            
+            const adminNavBtn = document.getElementById('nav-admin-settings');
+            if (currentUserRole === 'viewer') {
+                adminNavBtn.classList.add('hidden'); // 如果是 viewer，隱藏帳號管理
+            } else {
+                adminNavBtn.classList.remove('hidden'); // 如果是 admin，顯示帳號管理
+            }
+
             // 驗證成功後
             showPage('page-main');
         }
@@ -1514,6 +1543,61 @@ function changePage(offset) {
                 }
             }
         }
+
+        async function calculateFinanceStats() {
+    // 確保資料是最新的
+    await fetchAllMembers();
+    
+    const container = document.getElementById('finance-stats-container');
+    container.innerHTML = '<p class="text-center py-10 text-yellow-500">計算中...</p>';
+
+    // 定義要統計的年份
+    const years = ['112', '113', '114', '115', '116'];
+    let html = "";
+
+    years.forEach(year => {
+        let borrowCount = 0;    // 借錢人數
+        let returnCount = 0;    // 已還錢人數
+        let totalAmount = 0;    // 已還錢總金額
+
+        memberData.forEach(member => {
+            const yData = member.years?.[year];
+            if (yData) {
+                // 只要有該年份紀錄即視為借錢 (borrowed: true)
+                borrowCount++; 
+                
+                // 檢查是否已還款
+                if (yData.isReturned === true) {
+                    returnCount++;
+                    totalAmount += (parseInt(yData.returnedAmount) || 0);
+                }
+            }
+        });
+
+        // 產生該年份的統計小卡
+        html += `
+            <div class="p-4 bg-gray-800 rounded-lg border border-gray-700">
+                <h3 class="font-bold text-yellow-500 text-lg mb-2">${year} 年 (民國)</h3>
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div class="space-y-1">
+                        <p class="text-gray-400">借錢人數</p>
+                        <p class="text-xl font-bold text-white">${borrowCount} 人</p>
+                    </div>
+                    <div class="space-y-1">
+                        <p class="text-gray-400">還錢人數</p>
+                        <p class="text-xl font-bold text-green-400">${returnCount} 人</p>
+                    </div>
+                    <div class="col-span-2 pt-2 border-t border-gray-700">
+                        <p class="text-gray-400">累計還錢金額</p>
+                        <p class="text-2xl font-black text-yellow-400">$ ${totalAmount.toLocaleString()}</p>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+}
         
         
     </script>
