@@ -1104,52 +1104,60 @@ function loadReturnData(year) {
             button.classList.add('btn-gold');
         }
 
-        /** 載入舊資料到新增表單 (變為編輯模式) */
-        async function loadMemberForUpdate() {
-            if (currentUserRole !== 'admin') {
-                 alert('🚫 您的權限不足，無法編輯會員資料。');
-                 return;
-            }
 
-            await fetchAllMembers();
-            const id = document.getElementById('add-id').value;
-            if (!id) {
-                alert('請輸入要編輯的會員編號！');
-                return;
-            }
-            
-            currentMember = findMember(id);
-            if (!currentMember) {
-                alert(`🚫 查無編號 ${id} 的會員資料。`);
-                updateAddFormToNextId(); // 切回新增模式
-                return;
-            }
-
-            // 設定為編輯模式
-            document.getElementById('add-id').setAttribute('data-mode', 'update');
-            document.getElementById('add-member-button').textContent = '儲存修改後的會員資料';
-            
-            // 載入基本資料
-            document.getElementById('add-name').value = currentMember.name;
-            document.getElementById('add-idCard').value = currentMember.idCard;
-            document.getElementById('add-phone').value = currentMember.phone;
-            document.getElementById('add-address').value = currentMember.address;
-
-            // 載入年份借款狀態 (使用新的 Select 邏輯)
-            AVAILABLE_YEARS.forEach(year => {
-                const select = document.getElementById(`add-borrow-${year}`);
-                const yearData = currentMember.years?.[year];
-                
-                // 只要該年有紀錄 (即 yearData 存在)，就設定為「有借錢」
-                if (yearData) { 
-                    select.value = "true"; 
-                } else {
-                    select.value = ""; // 無資料
-                }
-            });
-            
-            alert(`✅ 已載入會員 ${currentMember.id}: ${currentMember.name} 的資料進行編輯。`);
+                /** 修正：確保 ID 轉為數字再搜尋，避免型別錯誤導致當掉 */
+        function findMemberById(id) {
+            if (!id) return null;
+            const targetId = parseInt(id); // 強制轉為數字型態
+            return memberData.find(m => m.id === targetId);
         }
+
+        /** 載入舊資料到編輯表單 (修正當掉問題) */
+async function loadMemberForUpdate() {
+    if (currentUserRole !== 'admin') {
+        alert('🚫 您的權限不足，無法編輯會員資料。');
+        return;
+    }
+
+    const idInput = document.getElementById('add-id').value;
+    if (!idInput) {
+        alert('請先輸入要編輯的會員編號！');
+        return;
+    }
+    
+    // 重新從快取搜尋會員
+    currentMember = findMemberById(idInput);
+
+    if (!currentMember) {
+        alert(`🚫 查無編號 ${idInput} 的會員資料。`);
+        updateAddFormToNextId(); // 找不到就切回「新增模式」
+        return;
+    }
+
+    // --- 成功找到資料後，開始填入表單 ---
+    
+    // 變更為編輯模式
+    document.getElementById('add-id').setAttribute('data-mode', 'update');
+    document.getElementById('add-member-button').textContent = '儲存修改後的會員資料';
+    
+    // 填入基本資料 (加上空值保護)
+    document.getElementById('add-name').value = currentMember.name || '';
+    document.getElementById('add-idCard').value = currentMember.idCard || '';
+    document.getElementById('add-phone').value = currentMember.phone || '';
+    document.getElementById('add-address').value = currentMember.address || '';
+
+    // 填入年份借款狀態
+    AVAILABLE_YEARS.forEach(year => {
+        const select = document.getElementById(`add-borrow-${year}`);
+        if (select) {
+            // 檢查該年份是否有資料 (使用 ?. 避免當掉)
+            const hasYearData = currentMember.years?.[year];
+            select.value = hasYearData ? "true" : ""; 
+        }
+    });
+    
+    alert(`✅ 已載入會員 ${currentMember.id}: ${currentMember.name}`);
+}
 
         /** 新增或更新會員資料 */
         async function addMemberData() {
