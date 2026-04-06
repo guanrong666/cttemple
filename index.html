@@ -516,11 +516,10 @@
             if (!normalizedQuery) return [];
 
             return memberData.filter(m => 
-                // 使用 == (非嚴格比對) 或將兩者都轉為字串比對，防止型別錯誤
-                String(m.id) === normalizedQuery || 
-                (m.name && m.name.includes(normalizedQuery)) || // 支援模糊搜尋名字更方便
-                (m.idCard && m.idCard.toUpperCase() === normalizedQuery.toUpperCase()) ||
-                (m.phone && m.phone === normalizedQuery)
+                String(m.id) === normalizedQuery ||
+                m.name === normalizedQuery ||
+                m.idCard === normalizedQuery.toUpperCase() ||
+                m.phone === normalizedQuery
             );
         }
 
@@ -553,20 +552,20 @@
         let currentTab = 'tab-update';
 
         document.addEventListener('DOMContentLoaded', async () => {
+        // 1. 優先從手機儲存空間讀取登入資訊
+        const savedUser = localStorage.getItem('rememberedUser');
+        const savedRole = localStorage.getItem('rememberedRole');
+
+            // 2. 載入資料庫資料
             await fetchAllMembers(); 
-            showPage('page-login');
+
             
+    
+            // 原有的 Tab 監聽邏輯...
             document.querySelectorAll('.tab-btn').forEach(button => {
                 button.addEventListener('click', (e) => {
                     showTab(e.target.dataset.page);
                 });
-            });
-            // 監聽奉還狀態 checkbox 變動
-            document.getElementById('update-returned-status')?.addEventListener('change', (e) => {
-                const isReturned = e.target.checked;
-                const label = document.getElementById('update-returned-label');
-                label.textContent = isReturned ? '已奉還' : '尚未奉還';
-                label.className = `ml-2 ${isReturned ? 'text-green-400' : 'text-red-400'}`;
             });
         });
 
@@ -594,14 +593,6 @@
             // 1. 根據權限隱藏/顯示 Tab 按鈕
             const isViewer = currentUserRole === 'viewer';
             
-            currentMember = null; 
-    
-            // 清空各頁面的查詢結果 UI
-            const updateForm = document.getElementById('member-return-update-form');
-            const queryResult = document.getElementById('member-data-query');
-            if (updateForm) updateForm.classList.add('hidden');
-            if (queryResult) queryResult.classList.add('hidden');
-
             // 定義管理員專屬的頁面 (Viewer 僅能使用 'tab-query')
             const adminOnlyTabs = ['tab-update', 'tab-add', 'tab-list','tab-admin-settings','tab-finance']; 
             if (currentUserRole === 'viewer' && adminOnlyTabs.includes(tabId)) {
@@ -1113,76 +1104,48 @@ function loadReturnData(year) {
             button.classList.add('btn-gold');
         }
 
-
-                /** 修正：確保 ID 轉為數字再搜尋，避免型別錯誤導致當掉 */
-        function findMemberById(id) {
-            if (!id) return null;
-            const targetId = parseInt(id); // 強制轉為數字型態
-            return memberData.find(m => m.id === targetId);
-        }
-
-        /** 載入舊資料到編輯表單 (修正當掉問題) */
+        /** 載入舊資料到新增表單 (變為編輯模式) */
+        /** 載入舊資料到新增表單 (變為編輯模式) */
 async function loadMemberForUpdate() {
     if (currentUserRole !== 'admin') {
-        alert('🚫 您的權限不足，無法編輯會員資料。');
-        return;
+         alert('🚫 您的權限不足，無法編輯會員資料。');
+         return;
     }
 
+    await fetchAllMembers();
     const idInput = document.getElementById('add-id').value;
-    const id = parseInt(idInput); // 確保轉為數字
-
-    // 從快取陣列中找
-    const found = memberData.find(m => m.id === id);
-    
-    if (found) {
-        // 使用解構賦值拷貝一份資料，避免直接修改原始陣列導致搜尋失效
-        currentMember = JSON.parse(JSON.stringify(found)); 
-        
-        // 填入欄位... (如前次所述)
-        document.getElementById('add-id').setAttribute('data-mode', 'update');
-    } else {
-        alert("找不到此編號");
-    }
-
     if (!idInput) {
-        alert('請先輸入要編輯的會員編號！');
+        alert('請輸入要編輯的會員編號！');
         return;
     }
     
-    // 重新從快取搜尋會員
-    currentMember = findMemberById(idInput);
+    const id = parseInt(idInput); // 確保轉為數字進行比對
+
+    // ✅ 修正點：直接從快取的 memberData 中尋找對應 ID
+    currentMember = memberData.find(m => m.id === id);
 
     if (!currentMember) {
-        alert(`🚫 查無編號 ${idInput} 的會員資料。`);
-        updateAddFormToNextId(); // 找不到就切回「新增模式」
+        alert(`🚫 查無編號 ${id} 的會員資料。`);
+        updateAddFormToNextId(); 
         return;
     }
 
-    
-
-    // --- 成功找到資料後，開始填入表單 ---
-    
-    // 變更為編輯模式
+    // --- 之後的載入邏輯保持不變 ---
     document.getElementById('add-id').setAttribute('data-mode', 'update');
     document.getElementById('add-member-button').textContent = '儲存修改後的會員資料';
     
-    // 填入基本資料 (加上空值保護)
-    document.getElementById('add-name').value = currentMember.name || '';
-    document.getElementById('add-idCard').value = currentMember.idCard || '';
-    document.getElementById('add-phone').value = currentMember.phone || '';
-    document.getElementById('add-address').value = currentMember.address || '';
+    document.getElementById('add-name').value = currentMember.name;
+    document.getElementById('add-idCard').value = currentMember.idCard;
+    document.getElementById('add-phone').value = currentMember.phone;
+    document.getElementById('add-address').value = currentMember.address;
 
-    // 填入年份借款狀態
     AVAILABLE_YEARS.forEach(year => {
         const select = document.getElementById(`add-borrow-${year}`);
-        if (select) {
-            // 檢查該年份是否有資料 (使用 ?. 避免當掉)
-            const hasYearData = currentMember.years?.[year];
-            select.value = hasYearData ? "true" : ""; 
-        }
+        const yearData = currentMember.years?.[year];
+        select.value = yearData ? "true" : ""; 
     });
     
-    alert(`✅ 已載入會員 ${currentMember.id}: ${currentMember.name}`);
+    alert(`✅ 已載入會員 ${currentMember.id}: ${currentMember.name} 的資料。`);
 }
 
         /** 新增或更新會員資料 */
@@ -1435,31 +1398,43 @@ function changePage(offset) {
         }
 
         async function login() {
-        const user = document.getElementById('login-user').value.trim();
-        const pass = document.getElementById('login-pass').value.trim();
+            const user = document.getElementById('login-user').value.trim();
+    const pass = document.getElementById('login-pass').value.trim();
 
-            // 先做基本的 admin/123456 保底登入（防止資料庫空的進不去）
-            if (user === 'admin' && pass === '123456') {
-                currentUserRole = 'admin';
-                checkSessionKey(); // 檢查遠端登出狀態
-                showPage('page-main');
-                return;
-            }
+    // 🚨 新增：如果帳號或密碼是空的，直接攔截！
+    if (user === "" || pass === "") {
+        alert("請輸入員工編號與密碼");
+        return; 
+    }
 
-            try {
-                const doc = await staffCollection.doc(user).get();
-                if (doc.exists && doc.data().password === pass) {
-                    currentUserRole = doc.data().role;
-                    checkSessionKey(); 
-                    alert(`✅ 登入成功！權限：${currentUserRole}`);
-                    showPage('page-main');
-                } else {
-                    alert('🚫 帳號或密碼錯誤！');
-                }
-            } catch (e) {
-                alert('系統連線失敗');
-            }
+    // 管理員保底帳號
+    if (user === 'admin' && pass === '123456') {
+        saveLoginState(user, 'admin');
+        return;
+    }
+
+    try {
+        const doc = await staffCollection.doc(user).get();
+        if (doc.exists && doc.data().password === pass) {
+            saveLoginState(user, doc.data().role);
+        } else {
+            alert('🚫 帳號或密碼錯誤！');
         }
+    } catch (e) {
+        alert('系統連線失敗，請檢查網路');
+    }
+}
+function saveLoginState(user, role) {
+    currentUserRole = role;
+    // 儲存到手機本地空間
+    localStorage.setItem('rememberedUser', user);
+    localStorage.setItem('rememberedRole', role);
+    
+    applyPermissions(role);
+    alert('✅ 登入成功');
+    showPage('page-main');
+}
+
 
         async function createStaffAccount() {
     if (currentUserRole !== 'admin') return alert('限管理員操作');
@@ -1631,6 +1606,27 @@ function changePage(offset) {
     });
 
     container.innerHTML = html;
+}
+
+function applyPermissions(role) {
+    const isAdmin = (role === 'admin');
+    
+    // 取得所有管理員專用的按鈕 (請確保您的 HTML 按鈕有對應的 ID)
+    const adminBtns = [
+        document.getElementById('nav-admin-settings'),
+        document.getElementById('nav-finance') // 如果您有加的話
+    ];
+
+    adminBtns.forEach(btn => {
+        if (btn) {
+            isAdmin ? btn.classList.remove('hidden') : btn.classList.add('hidden');
+        }
+    });
+
+    // 如果是 Viewer，強制預設分頁為查詢頁面
+    if (!isAdmin) {
+        showTab('tab-query');
+    }
 }
         
         
