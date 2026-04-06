@@ -132,7 +132,7 @@
                         
                         <div class="space-y-3 pb-3 border-b border-gray-700">
                             <input type="text" id="update-query-input" placeholder="輸入編號/姓名/身分證/電話" class="w-full input-gold">
-                            <button onclick="fetchMemberDataForUpdate()" class="w-full py-2 btn-gold text-sm">
+                            <button id="main-search-btn" onclick="fetchMemberDataForUpdate()" class="w-full py-2 btn-gold text-sm">
                                 查詢並載入奉還資料
                             </button>
                         </div>
@@ -813,11 +813,11 @@ async function fetchMemberDataForUpdate(targetId = null) {
 }
 
         /** 更新畫面上顯示的奉還內容 (加入禁用法則) */
+/** 更新畫面上顯示的奉還內容 (精確禁用版) */
 function loadReturnData(year) {
     if (!currentMember) return;
     const select = document.getElementById('update-year-select');
     
-    // 刷新選單內「每一項」的文字狀態
     if (select) {
         Array.from(select.options).forEach(opt => {
             const y = opt.value;
@@ -827,57 +827,43 @@ function loadReturnData(year) {
         });
     }
 
-    const data = currentMember.years?.[year] || { borrowed: false, isReturned: false, returnedAmount: 0, returnedDate: '' };
-    const hasRecord = !!currentMember.years?.[year]; // 檢查是否有借錢紀錄
+    const data = currentMember.years?.[year] || null;
+    const hasRecord = !!data; 
     
-    // 更新狀態文字
     const statusP = document.getElementById('return-borrowed-status');
     statusP.textContent = hasRecord ? `📌 ${year} 年有借錢紀錄` : `🚫 ${year} 年無借錢紀錄 (不可操作)`;
     statusP.className = `text-sm font-bold ${hasRecord ? 'text-yellow-400' : 'text-red-400'}`;
 
-    // --- 核心修改：如果沒借錢，就禁用輸入框與按鈕 ---
     const inputAmount = document.getElementById('update-amount');
     const inputDate = document.getElementById('update-date');
     const checkStatus = document.getElementById('update-returned-status');
-    const updateBtn = document.querySelector('#tab-update .btn-gold:last-child'); // 抓取更新按鈕
+    
+    // 🚩 這裡修改：改用 ID 抓更新按鈕，或精確限制在 form 裡面
+    // 假設你在 updateMemberReturnInfo 的那個按鈕加上 id="submit-return-btn"
+    const updateBtn = document.querySelector('#member-return-update-form button[onclick^="updateMemberReturnInfo"]');
 
     if (!hasRecord) {
-        // 沒借錢：清空內容並禁用
-        inputAmount.value = '';
-        inputDate.value = '';
-        checkStatus.checked = false;
-        
-        inputAmount.disabled = true;
-        inputDate.disabled = true;
-        checkStatus.disabled = true;
-        if(updateBtn) updateBtn.disabled = true;
-        
-        // 變更樣式讓使用者知道不能按
-        inputAmount.classList.add('opacity-50', 'cursor-not-allowed');
-        inputDate.classList.add('opacity-50', 'cursor-not-allowed');
-        if(updateBtn) updateBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        if(inputAmount) { inputAmount.value = ''; inputAmount.disabled = true; inputAmount.classList.add('opacity-50'); }
+        if(inputDate) { inputDate.value = ''; inputDate.disabled = true; inputDate.classList.add('opacity-50'); }
+        if(checkStatus) { checkStatus.checked = false; checkStatus.disabled = true; }
+        if(updateBtn) { updateBtn.disabled = true; updateBtn.classList.add('opacity-50', 'cursor-not-allowed'); }
     } else {
-        // 有借錢：填入資料並啟用
-        inputAmount.value = data.returnedAmount || '';
-        inputDate.value = data.returnedDate || '';
-        checkStatus.checked = !!data.isReturned;
-        
-        inputAmount.disabled = false;
-        inputDate.disabled = false;
-        checkStatus.disabled = false;
-        if(updateBtn) updateBtn.disabled = false;
-
-        // 移除禁用樣式
-        inputAmount.classList.remove('opacity-50', 'cursor-not-allowed');
-        inputDate.classList.remove('opacity-50', 'cursor-not-allowed');
-        if(updateBtn) updateBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        if(inputAmount) { inputAmount.value = data.returnedAmount || ''; inputAmount.disabled = false; inputAmount.classList.remove('opacity-50'); }
+        if(inputDate) { inputDate.value = data.returnedDate || ''; inputDate.disabled = false; inputDate.classList.remove('opacity-50'); }
+        if(checkStatus) { checkStatus.checked = !!data.isReturned; checkStatus.disabled = false; }
+        if(updateBtn) { updateBtn.disabled = false; updateBtn.classList.remove('opacity-50', 'cursor-not-allowed'); }
     }
 
-    // 更新勾選框標籤文字
+    // 確保「主搜尋按鈕」永遠是啟用的！
+    const mainSearchBtn = document.getElementById('main-search-btn');
+    if(mainSearchBtn) mainSearchBtn.disabled = false;
+
     const label = document.getElementById('update-returned-label');
-    const isReturned = (data.isReturned === true);
-    label.textContent = isReturned ? '已奉還' : '尚未奉還';
-    label.className = `ml-2 ${isReturned ? 'text-green-400' : 'text-red-400'}`;
+    const isReturned = (data?.isReturned === true);
+    if(label) {
+        label.textContent = isReturned ? '已奉還' : '尚未奉還';
+        label.className = `ml-2 ${isReturned ? 'text-green-400' : 'text-red-400'}`;
+    }
 }
 
         async function updateMemberReturnInfo() {
