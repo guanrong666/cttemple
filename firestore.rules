@@ -1,0 +1,70 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function staffProfile() {
+      return get(/databases/$(database)/documents/staff/$(request.auth.uid));
+    }
+
+    function hasRole() {
+      return signedIn()
+        && staffProfile().data.role in ['admin', 'viewer'];
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && staffProfile().data.role == 'admin';
+    }
+
+    function validStaffProfile() {
+      return request.resource.data.keys().hasOnly(['email', 'role', 'updatedAt'])
+        && request.resource.data.email is string
+        && request.resource.data.role in ['admin', 'viewer'];
+    }
+
+    function validOnlinePresence(uid) {
+      return request.resource.data.keys().hasOnly(['uid', 'email', 'role', 'status', 'lastSeen'])
+        && request.resource.data.uid == uid
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.role == staffProfile().data.role
+        && request.resource.data.status in ['online', 'offline']
+        && request.resource.data.lastSeen == request.time;
+    }
+
+    match /members/{memberId} {
+      allow read: if hasRole();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /staff/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow create: if isAdmin() && validStaffProfile();
+      allow update: if isAdmin()
+        && validStaffProfile()
+        && (request.auth.uid != uid || request.resource.data.role == 'admin');
+      allow delete: if isAdmin() && request.auth.uid != uid;
+    }
+
+    match /system_config/{documentId} {
+      allow read: if hasRole();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /online_users/{uid} {
+      allow read: if isAdmin();
+      allow create, update: if signedIn()
+        && request.auth.uid == uid
+        && hasRole()
+        && validOnlinePresence(uid);
+      allow delete: if isAdmin() || (signedIn() && request.auth.uid == uid);
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
