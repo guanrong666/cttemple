@@ -1,0 +1,38 @@
+const API='https://cttemple-member-api.joejin0726.workers.dev';
+const LIFF_ID='2012356234-J9BhmUgw';
+const $=id=>document.getElementById(id);
+let busy=false;
+function status(text){$('status').textContent=text;}
+function lock(value){busy=value;for(const id of ['bind','refresh','unlink'])$(id).disabled=value;}
+async function call(path,extra={}){const token=liff.getIDToken();if(!token)throw new Error('LINE 登入已失效，請關閉頁面再開啟。');const r=await fetch(API+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lineIdToken:token,...extra}),signal:AbortSignal.timeout(30000)});let data;try{data=await r.json();}catch{throw new Error('服務連線異常，請稍後重試。');}if(!r.ok)throw new Error(data.error||'暫時無法完成，請稍後重試。');return data;}
+const ZODIAC=[['猴','🐒'],['雞','🐓'],['狗','🐕'],['豬','🐖'],['鼠','🐭'],['牛','🐂'],['虎','🐯'],['兔','🐇'],['龍','🐉'],['蛇','🐍'],['馬','🐎'],['羊','🐐']];
+function renderBadges(years){
+  const list=$('badge-list');list.replaceChildren();
+  const earned=new Map();
+  for(const record of years){
+    const year=Number(record.year),amount=Number(record.returnedAmount);
+    if(!Number.isInteger(year)||year<112||!Number.isFinite(amount)||amount<=0)continue;
+    earned.set(year-1,year);
+  }
+  $('badge-empty').hidden=earned.size>0;
+  for(const [year,repaymentYear] of [...earned].sort((a,b)=>b[0]-a[0])){
+    const [animal,emoji]=ZODIAC[(year+1911)%12];
+    const badge=document.createElement('article');badge.className='zodiac-badge';
+    const icon=document.createElement('span');icon.setAttribute('aria-hidden','true');
+    if(year>=111&&year<=122){
+      icon.className='badge-art';
+      const art=document.createElement('img');art.src='assets/zodiac-'+year+'.png';art.alt='';art.loading='lazy';art.decoding='async';
+      art.width=320;art.height=315;icon.append(art);
+    }else{icon.className='badge-medallion';icon.textContent=emoji;}
+    const title=document.createElement('strong');title.textContent=year+' 年・'+animal+'年徽章';
+    const note=document.createElement('span');note.className='badge-earned';note.textContent=repaymentYear+' 年奉還獲得';
+    badge.append(icon,title,note);list.append(badge);
+  }
+}
+function render(result){$('binding').hidden=result.bound;for(const id of ['card','badges','records','unlink'])$(id).hidden=!result.bound;if(!result.bound){renderBadges([]);$('qr').replaceChildren();$('year-list').replaceChildren();$('member-name').textContent='';$('member-id').textContent='';status('首次使用，請輸入登記姓名與手機號碼。');return;}const m=result.member;renderBadges(m.years);$('member-name').textContent=m.name;$('member-id').textContent='會員編號：'+m.id;const q=qrcode(0,'M');q.addData(result.qr);q.make();const img=document.createElement('img');img.src=q.createDataURL(6,4);img.alt='承天宮會員 QR Code';$('qr').replaceChildren(img);$('year-list').replaceChildren();for(const y of m.years){const row=document.createElement('div');row.className='year';const title=document.createElement('strong');title.textContent=y.year+' 年';row.append(title);const amount=Number(y.returnedAmount),hasRecord=amount!==0||!!y.returnedDate;const lines=['借款狀態：'+(y.borrowed?'有借款':'無借款'),'奉還金額：'+(!y.borrowed&&!hasRecord?'不適用':y.borrowed&&!hasRecord?'未奉還':amount.toLocaleString('zh-TW')+' 元'),'奉還日期：'+(y.returnedDate||(!y.borrowed&&!hasRecord?'不適用':'尚未登記'))];for(const text of lines){const p=document.createElement('p');p.textContent=text;row.append(p);}$('year-list').append(row);}if(!m.years.length)$('year-list').textContent='目前尚無年度紀錄。';status('已載入您的會員資料。');}
+async function load(){if(busy)return;lock(true);status('正在讀取您的會員資料…');try{render(await call('/membership'));}catch(e){status(e.message);}finally{lock(false);}}
+$('phone').oninput=()=>{$('phone').value=$('phone').value.replace(/\D/g,'').slice(0,10);};
+$('bind-form').onsubmit=async e=>{e.preventDefault();if(busy)return;const name=$('name').value.trim(),phone=$('phone').value;if(!name||!/^09\d{8}$/.test(phone)||!$('consent').checked){status('請輸入完整姓名、10 碼手機並同意資料使用說明。');return;}lock(true);status('正在比對登記資料…');try{render(await call('/bind',{name,phone,consent:true}));$('name').value='';$('phone').value='';}catch(e){status(e.message);}finally{lock(false);}};
+$('refresh').onclick=load;
+$('unlink').onclick=async()=>{if(busy||!confirm('解除後會員條碼將失效，下次需重新輸入姓名與手機綁定。確定解除？'))return;lock(true);try{await call('/unlink');render({bound:false});status('已解除 LINE 綁定。');}catch(e){status(e.message);}finally{lock(false);}};
+(async()=>{try{await liff.init({liffId:LIFF_ID});if(!liff.isLoggedIn()){liff.login({redirectUri:new URL('./',location.href).href});return;}await load();}catch(e){status(e.message||'LINE 登入暫時無法完成。');}})();
